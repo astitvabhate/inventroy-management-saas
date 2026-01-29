@@ -85,7 +85,7 @@ export default function ResetPasswordPage() {
         return (
             <div>
                 <Link href="/" className="lg:hidden block text-xl tracking-tight mb-8">
-                    Dhuni<span className="text-muted-foreground">.</span>
+                    Dhuni Decor<span className="text-muted-foreground">.</span>
                 </Link>
 
                 <div className="mb-8">
@@ -115,7 +115,7 @@ export default function ResetPasswordPage() {
     return (
         <div>
             <Link href="/" className="lg:hidden block text-xl tracking-tight mb-8">
-                Dhuni<span className="text-muted-foreground">.</span>
+                Dhuni Decor<span className="text-muted-foreground">.</span>
             </Link>
 
             <div className="mb-8">

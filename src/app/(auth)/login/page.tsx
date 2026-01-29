@@ -36,7 +36,7 @@ export default function LoginPage() {
         <div>
             {/* Mobile Logo */}
             <Link href="/" className="lg:hidden block text-xl tracking-tight mb-8">
-                Dhuni<span className="text-muted-foreground">.</span>
+                Dhuni Decor<span className="text-muted-foreground">.</span>
             </Link>
 
             <div className="mb-8">
