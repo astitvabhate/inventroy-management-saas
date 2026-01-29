@@ -6,7 +6,7 @@ export default async function SalesPage() {
     const supabase = await createClient()
 
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return <div className="p-8">Please log in <Link href="/login" className="text-primary text-blue-500 hover:text-blue-600">here</Link></div>
+    if (!user) return <div className="p-8">Please log in <Link href="/login" className="text-blue-500 hover:text-blue-600">here</Link></div>
 
     const { data: sales } = await supabase
         .from('sales')
