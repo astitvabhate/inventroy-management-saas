@@ -1,11 +1,12 @@
 import { createClient } from '@/lib/supabase/server'
 import { Phone, Mail, MapPin } from 'lucide-react'
+import Link from 'next/link'
 
 export default async function CustomersPage() {
     const supabase = await createClient()
 
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return <div className="p-8">Please log in</div>
+    if (!user) return <div className="p-8">Please log in <Link href="/login" className="text-primary">here</Link></div>
 
     const { data: customers } = await supabase
         .from('customers')

@@ -1,11 +1,12 @@
 import { createClient } from '@/lib/supabase/server'
 import { cn } from '@/lib/utils'
+import Link from 'next/link'
 
 export default async function SalesPage() {
     const supabase = await createClient()
 
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return <div className="p-8">Please log in</div>
+    if (!user) return <div className="p-8">Please log in <Link href="/login" className="text-primary">here</Link></div>
 
     const { data: sales } = await supabase
         .from('sales')
