@@ -23,11 +23,11 @@ export default async function DashboardPage() {
         <div className="px-8 py-12">
             {/* Header */}
             <header className="mb-16">
-                <p className="text-2xl font-semibold font-family: sans-serif" >Hello {user?.user_metadata?.full_name.trim().split(' ')[0]}</p>
+                <p className="text-2xl font-semibold font-family: sans-serif" >Hello {user?.user_metadata?.full_name.trim().split(' ')[0] || <Link href="/login" className='text-blue-800 hover:text-blue-400'>Login here</Link>}</p>
                 <p className="pt-6 text-sm text-muted-foreground mb-2">Dashboard</p>
                 <h1 className="text-4xl md:text-5xl tracking-tight">
                     Overview
-                </h1>
+                </h1>   
             </header>
 
             {/* Stats Grid */}
