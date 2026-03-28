@@ -36,19 +36,21 @@ export default async function DashboardPage() {
                 </Link>
             </header>
 
-            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
                 {cards.map((card) => (
                     <Link
                         key={card.key}
                         href={card.href}
-                        className="rounded-[2rem] border border-border bg-card p-5 transition hover:border-foreground/20 hover:bg-accent/30 md:p-6"
+                        className="rounded-[1.6rem] border border-border bg-card p-4 transition hover:border-foreground/20 hover:bg-accent/30 md:rounded-[2rem] md:p-6"
                     >
                         <div className="flex items-center justify-between">
                             <card.icon className="h-5 w-5 text-muted-foreground" />
                             <ArrowRight className="h-4 w-4 text-muted-foreground" />
                         </div>
-                        <p className="mt-6 text-xs uppercase tracking-[0.16em] text-muted-foreground sm:text-sm sm:tracking-[0.2em]">{card.label}</p>
-                        <p className="mt-2 text-3xl tracking-tight sm:text-4xl">
+                        <p className="mt-4 text-[10px] uppercase tracking-[0.16em] text-muted-foreground sm:mt-6 sm:text-sm sm:tracking-[0.2em]">
+                            {card.label}
+                        </p>
+                        <p className="mt-1.5 text-2xl tracking-tight sm:mt-2 sm:text-4xl">
                             {overview.counts[card.key]}
                         </p>
                     </Link>

@@ -13,8 +13,10 @@ import {
     LogOut,
     Menu,
     X,
+    ShieldCheck,
 } from 'lucide-react'
 import { useAuth } from '@/components/providers/auth-provider'
+import { ThemeToggle } from '@/components/theme-toggle'
 
 const routes = [
     { label: 'Overview', icon: LayoutDashboard, href: '/dashboard' },
@@ -92,6 +94,7 @@ export function Sidebar() {
 
 export function MobileSidebar() {
     const [open, setOpen] = useState(false)
+    const { signOut, user } = useAuth()
 
     return (
         <>
@@ -109,7 +112,7 @@ export function MobileSidebar() {
             {open && (
                 <div className="fixed inset-0 z-[9999] md:hidden" role="dialog" aria-modal="true" aria-labelledby="mobile-sidebar-title">
                     <div className="fixed inset-0 bg-black/75 backdrop-blur-sm" onClick={() => setOpen(false)} />
-                    <div id="mobile-sidebar" className="fixed inset-y-0 left-0 w-[90vw] max-w-sm">
+                    <div id="mobile-sidebar" className="fixed left-4 right-4 top-[max(1rem,env(safe-area-inset-top))]">
                         <div className="flex items-center justify-end p-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
                             <button
                                 type="button"
@@ -120,10 +123,44 @@ export function MobileSidebar() {
                                 <X className="h-5 w-5" />
                             </button>
                         </div>
-                        <div className="h-[calc(100dvh-4.5rem)] pb-[max(1rem,env(safe-area-inset-bottom))] pl-3">
-                            <div className="h-full overflow-hidden rounded-[2rem] border border-white/10 shadow-2xl shadow-black/40">
-                                <h2 id="mobile-sidebar-title" className="sr-only">Mobile navigation</h2>
-                                <SidebarContent mobile onNavigate={() => setOpen(false)} />
+                        <div className="pb-[max(1rem,env(safe-area-inset-bottom))]">
+                            <div className="overflow-hidden rounded-[2rem] border border-white/10 bg-neutral-950 shadow-2xl shadow-black/40">
+                                <h2 id="mobile-sidebar-title" className="sr-only">Mobile workspace actions</h2>
+                                <div className="border-b border-white/10 px-5 py-5">
+                                    <p className="text-sm uppercase tracking-[0.35em] text-stone-200">Inventory Flow</p>
+                                    <p className="mt-3 text-sm font-medium text-white">{user?.name ?? 'Operations workspace'}</p>
+                                    <p className="mt-1 truncate text-xs text-stone-400">{user?.email ?? 'Workspace protected'}</p>
+                                </div>
+
+                                <div className="space-y-4 px-5 py-5">
+                                    <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
+                                        <ShieldCheck className="h-4 w-4 text-emerald-300" />
+                                        <div className="min-w-0">
+                                            <p className="text-sm font-medium text-white">Workspace protected</p>
+                                            <p className="text-xs text-stone-400">Use the bottom bar for navigation.</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
+                                        <div>
+                                            <p className="text-sm font-medium text-white">Appearance</p>
+                                            <p className="text-xs text-stone-400">Switch between light and dark mode.</p>
+                                        </div>
+                                        <ThemeToggle />
+                                    </div>
+
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            signOut()
+                                            setOpen(false)
+                                        }}
+                                        className="flex min-h-12 w-full items-center justify-center gap-3 rounded-2xl bg-white px-4 py-3 text-sm font-medium text-black transition hover:bg-stone-200"
+                                    >
+                                        <LogOut className="h-4 w-4" />
+                                        <span>Log out</span>
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
