@@ -2,126 +2,80 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import Link from 'next/link'
-import { createClient } from '@/lib/supabase/client'
-import { Database } from '@/types/supabase'
-import { SupabaseClient } from '@supabase/supabase-js'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { ImageUpload } from '@/components/image-upload'
+import { ImageUpload, type UploadedImage } from '@/components/image-upload'
 import { useToast } from '@/hooks/use-toast'
-import { ArrowLeft } from 'lucide-react'
+import { createItemAction } from '@/lib/actions/inventory'
+import { BackButton } from '@/components/back-button'
+
+const categories = ['electronics', 'supplies', 'equipment', 'packaging', 'materials', 'office', 'other']
 
 export default function NewItemPage() {
     const router = useRouter()
     const { toast } = useToast()
     const [loading, setLoading] = useState(false)
-    const [uploadedImages, setUploadedImages] = useState<string[]>([])
-
+    const [uploadedImages, setUploadedImages] = useState<UploadedImage[]>([])
     const [formData, setFormData] = useState({
         name: '',
         description: '',
         category: '',
-        cost_price: '',
-        selling_price: '',
-        initial_quantity: '',
+        customCategory: '',
+        unit: 'unit',
+        sku: '',
+        reorderPoint: '3',
+        costPrice: '',
+        sellingPrice: '',
+        initialQuantity: '',
     })
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         setLoading(true)
-        const supabase = createClient() as SupabaseClient<Database>
 
         try {
-            const { data: { user } } = await supabase.auth.getUser()
-            if (!user) throw new Error('Not authenticated')
+            const result = await createItemAction({
+                name: formData.name,
+                description: formData.description,
+                category: formData.category === 'other' ? formData.customCategory : formData.category,
+                unit: formData.unit,
+                sku: formData.sku,
+                reorderPoint: Number(formData.reorderPoint || 0),
+                costPrice: Number(formData.costPrice),
+                sellingPrice: Number(formData.sellingPrice),
+                initialQuantity: Number(formData.initialQuantity || 0),
+                images: uploadedImages,
+            })
 
-            const { data: userData } = await supabase
-                .from('users')
-                .select('vendor_id')
-                .eq('id', user.id)
-                .single()
-
-            if (!userData) throw new Error('User data not found')
-
-            const { data: item, error: itemError } = await supabase
-                .from('items')
-                .insert({
-                    vendor_id: userData.vendor_id,
-                    name: formData.name,
-                    description: formData.description,
-                    category: formData.category,
-                    cost_price: parseFloat(formData.cost_price),
-                    selling_price: parseFloat(formData.selling_price),
-                    total_quantity: 0,
-                    available_quantity: 0,
-                } as Database['public']['Tables']['items']['Insert'])
-                .select()
-                .single()
-
-            if (itemError) throw itemError
-
-            if (formData.initial_quantity && parseInt(formData.initial_quantity) > 0) {
-                const { error: stockError } = await supabase
-                    .from('stock_entries')
-                    .insert({
-                        vendor_id: userData.vendor_id,
-                        item_id: item.id,
-                        quantity_added: parseInt(formData.initial_quantity),
-                        cost_per_unit: parseFloat(formData.cost_price),
-                        created_by: user.id,
-                    } as Database['public']['Tables']['stock_entries']['Insert'])
-
-                if (stockError) throw stockError
+            if (!result.ok) {
+                throw new Error(result.message)
             }
 
-            if (uploadedImages.length > 0) {
-                const imageRecords = uploadedImages.map((path, index) => ({
-                    vendor_id: userData.vendor_id,
-                    item_id: item.id,
-                    path,
-                    url: `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/vendor-item-images/${path}`,
-                    file_name: path.split('/').pop() || '',
-                    is_primary: index === 0,
-                }))
-
-                const { error: imageError } = await supabase
-                    .from('item_images')
-                    .insert(imageRecords as Database['public']['Tables']['item_images']['Insert'][])
-
-                if (imageError) throw imageError
-            }
-
-            toast({ title: 'Success', description: 'Item created successfully' })
-            router.push('/inventory')
+            toast({ title: 'Success', description: result.message })
+            router.push(`/inventory/${result.itemId}`)
             router.refresh()
-        } catch (error: any) {
-            console.error(error)
-            toast({ title: 'Error', description: error.message, variant: 'destructive' })
+        } catch (error: unknown) {
+            toast({ title: 'Error', description: error instanceof Error ? error.message : 'Unable to create item.', variant: 'destructive' })
         } finally {
             setLoading(false)
         }
     }
 
     return (
-        <div className="px-4 md:px-8 py-8 md:py-12 max-w-2xl">
-            {/* Back Link */}
-            <Link
-                href="/inventory"
-                className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors mb-8"
-            >
-                <ArrowLeft className="w-4 h-4" />
-                Back to inventory
-            </Link>
+        <div className="max-w-3xl px-4 py-8 md:px-8 md:py-12">
+            <BackButton fallbackHref="/inventory" label="Back to inventory" className="mb-8" />
 
-            <h1 className="text-3xl md:text-4xl tracking-tight mb-8">Add New Item</h1>
+            <h1 className="text-3xl tracking-tight md:text-4xl">Add New Item</h1>
+            <p className="mt-3 max-w-2xl text-sm text-muted-foreground">
+                Create a clean catalog entry with pricing, reorder context, and product imagery.
+            </p>
 
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleSubmit} className="mt-8 space-y-6 rounded-[2rem] border border-border bg-card p-6 md:p-8">
                 <div>
-                    <Label htmlFor="name" className="text-xs uppercase tracking-wider text-muted-foreground">
-                        Item Name *
+                    <Label htmlFor="name" className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                        Item name
                     </Label>
                     <Input
                         id="name"
@@ -129,12 +83,12 @@ export default function NewItemPage() {
                         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                         required
                         className="mt-2"
-                        placeholder="Enter item name"
+                        placeholder="Portable work light"
                     />
                 </div>
 
                 <div>
-                    <Label htmlFor="description" className="text-xs uppercase tracking-wider text-muted-foreground">
+                    <Label htmlFor="description" className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
                         Description
                     </Label>
                     <Input
@@ -142,101 +96,150 @@ export default function NewItemPage() {
                         value={formData.description}
                         onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                         className="mt-2"
-                        placeholder="Optional description"
+                        placeholder="Short description for the team"
                     />
                 </div>
 
-                <div>
-                    <Label htmlFor="category" className="text-xs uppercase tracking-wider text-muted-foreground">
-                        Category *
-                    </Label>
-                    <Select
-                        value={formData.category}
-                        onValueChange={(value) => setFormData({ ...formData, category: value })}
-                    >
-                        <SelectTrigger className="mt-2">
-                            <SelectValue placeholder="Select category" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="flowers">Flowers</SelectItem>
-                            <SelectItem value="lights">Lights</SelectItem>
-                            <SelectItem value="fabrics">Fabrics</SelectItem>
-                            <SelectItem value="props">Props</SelectItem>
-                            <SelectItem value="furniture">Furniture</SelectItem>
-                            <SelectItem value="other">Other</SelectItem>
-                        </SelectContent>
-                    </Select>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-4 md:grid-cols-2">
                     <div>
-                        <Label htmlFor="cost_price" className="text-xs uppercase tracking-wider text-muted-foreground">
-                            Cost Price (₹) *
+                        <Label htmlFor="category" className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                            Category
+                        </Label>
+                        <Select value={formData.category} onValueChange={(value) => setFormData({ ...formData, category: value })}>
+                            <SelectTrigger className="mt-2">
+                                <SelectValue placeholder="Select category" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {categories.map((category) => (
+                                    <SelectItem key={category} value={category}>
+                                        {category}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                        {formData.category === 'other' && (
+                            <Input
+                                value={formData.customCategory}
+                                onChange={(e) => setFormData({ ...formData, customCategory: e.target.value })}
+                                className="mt-3"
+                                placeholder="Enter custom category"
+                                required
+                            />
+                        )}
+                    </div>
+                    <div>
+                        <Label htmlFor="unit" className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                            Unit
                         </Label>
                         <Input
-                            id="cost_price"
+                            id="unit"
+                            value={formData.unit}
+                            onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
+                            className="mt-2"
+                            placeholder="unit, box, set"
+                        />
+                    </div>
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-2">
+                    <div>
+                        <Label htmlFor="sku" className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                            SKU
+                        </Label>
+                        <Input
+                            id="sku"
+                            value={formData.sku}
+                            onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
+                            className="mt-2"
+                            placeholder="INV-1042"
+                        />
+                    </div>
+                    <div>
+                        <Label htmlFor="reorderPoint" className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                            Reorder point
+                        </Label>
+                        <Input
+                            id="reorderPoint"
+                            type="number"
+                            min="0"
+                            value={formData.reorderPoint}
+                            onChange={(e) => setFormData({ ...formData, reorderPoint: e.target.value })}
+                            className="mt-2"
+                        />
+                    </div>
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-3">
+                    <div>
+                        <Label htmlFor="costPrice" className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                            Cost price
+                        </Label>
+                        <Input
+                            id="costPrice"
                             type="number"
                             step="0.01"
                             min="0"
-                            value={formData.cost_price}
-                            onChange={(e) => setFormData({ ...formData, cost_price: e.target.value })}
+                            value={formData.costPrice}
+                            onChange={(e) => setFormData({ ...formData, costPrice: e.target.value })}
                             required
                             className="mt-2"
                             placeholder="0.00"
                         />
                     </div>
-
                     <div>
-                        <Label htmlFor="selling_price" className="text-xs uppercase tracking-wider text-muted-foreground">
-                            Selling Price (₹) *
+                        <Label htmlFor="sellingPrice" className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                            Selling price
                         </Label>
                         <Input
-                            id="selling_price"
+                            id="sellingPrice"
                             type="number"
                             step="0.01"
                             min="0"
-                            value={formData.selling_price}
-                            onChange={(e) => setFormData({ ...formData, selling_price: e.target.value })}
+                            value={formData.sellingPrice}
+                            onChange={(e) => setFormData({ ...formData, sellingPrice: e.target.value })}
                             required
                             className="mt-2"
                             placeholder="0.00"
                         />
                     </div>
+                    <div>
+                        <Label htmlFor="initialQuantity" className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                            Initial quantity
+                        </Label>
+                        <Input
+                            id="initialQuantity"
+                            type="number"
+                            min="0"
+                            value={formData.initialQuantity}
+                            onChange={(e) => setFormData({ ...formData, initialQuantity: e.target.value })}
+                            className="mt-2"
+                            placeholder="0"
+                        />
+                    </div>
                 </div>
 
                 <div>
-                    <Label htmlFor="initial_quantity" className="text-xs uppercase tracking-wider text-muted-foreground">
-                        Initial Quantity
+                    <Label className="mb-3 block text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                        Item images
                     </Label>
-                    <Input
-                        id="initial_quantity"
-                        type="number"
-                        min="0"
-                        value={formData.initial_quantity}
-                        onChange={(e) => setFormData({ ...formData, initial_quantity: e.target.value })}
-                        className="mt-2"
-                        placeholder="0"
-                    />
-                    <p className="text-xs text-muted-foreground mt-2">
-                        You can add stock later if you leave this empty
-                    </p>
-                </div>
-
-                <div>
-                    <Label className="text-xs uppercase tracking-wider text-muted-foreground block mb-3">
-                        Item Images
-                    </Label>
-                    <ImageUpload
-                        onImagesUploaded={setUploadedImages}
-                        maxImages={5}
-                    />
+                    <ImageUpload onImagesUploaded={setUploadedImages} maxImages={5} />
                 </div>
 
                 <div className="flex gap-3 pt-4">
                     <Button type="submit" disabled={loading}>
-                        {loading ? 'Creating...' : 'Create Item'}
+                        {loading ? 'Creating...' : 'Create item'}
                     </Button>
-                    <Button type="button" variant="outline" onClick={() => router.back()}>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => {
+                            if (window.history.length > 1) {
+                                router.back()
+                                return
+                            }
+                            router.push('/inventory')
+                        }}
+                    >
                         Cancel
                     </Button>
                 </div>

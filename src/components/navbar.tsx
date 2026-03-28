@@ -2,27 +2,35 @@
 
 import { useAuth } from '@/components/providers/auth-provider'
 import { MobileSidebar } from '@/components/sidebar'
+import { ThemeToggle } from '@/components/theme-toggle'
 
 export function Navbar() {
     const { user } = useAuth()
 
     return (
-        <div className="flex items-center justify-between px-4 md:px-8 py-4 border-b border-border bg-background/80 backdrop-blur-sm sticky top-0 z-40">
-            <div className="flex items-center gap-4">
-                {/* Mobile Menu */}
+        <div className="sticky top-0 z-40 flex items-center justify-between gap-3 border-b border-border bg-background/85 px-4 py-3 backdrop-blur-sm md:px-8 md:py-4">
+            <div className="flex min-w-0 items-center gap-3 sm:gap-4">
                 <MobileSidebar />
-
-                {/* Status */}
-                <div className="hidden sm:flex items-center gap-3">
-                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                    <span className="text-xs text-muted-foreground">Active</span>
+                <div className="min-w-0 md:hidden">
+                    <p className="truncate text-sm font-medium">Inventory Flow</p>
+                    <p className="truncate text-[11px] text-muted-foreground">
+                        {user?.name ?? 'Operations workspace'}
+                    </p>
+                </div>
+                <div className="hidden items-center gap-3 rounded-full border border-border bg-card px-3 py-1.5 sm:flex">
+                    <div className="h-2 w-2 rounded-full bg-emerald-500" />
+                    <span className="text-xs text-muted-foreground">Workspace protected</span>
                 </div>
             </div>
 
-            <div className="flex items-center gap-4">
-                <span className="text-sm text-muted-foreground hidden sm:block">{user?.email}</span>
-                <div className="w-8 h-8 bg-accent flex items-center justify-center text-xs font-medium">
-                    {user?.email?.charAt(0).toUpperCase()}
+            <div className="min-w-0 flex items-center gap-2 sm:gap-3">
+                <ThemeToggle />
+                <div className="hidden text-right sm:block">
+                    <p className="truncate text-sm font-medium">{user?.name ?? 'Inventory operator'}</p>
+                    <p className="max-w-[180px] truncate text-xs text-muted-foreground">{user?.email}</p>
+                </div>
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-accent text-xs font-semibold uppercase">
+                    {user?.name?.charAt(0) || user?.email?.charAt(0) || 'I'}
                 </div>
             </div>
         </div>

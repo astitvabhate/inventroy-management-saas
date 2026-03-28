@@ -2,121 +2,112 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
-import { cn } from "@/lib/utils"
+import { cn } from '@/lib/utils'
 import { ArrowRight } from 'lucide-react'
+import { formatCurrency } from '@/lib/format'
 
 interface Item {
     id: string
     name: string
     category: string
-    total_quantity: number
-    available_quantity: number
-    cost_price: number
-    selling_price: number
-    item_images?: Array<{
+    totalQuantity: number
+    availableQuantity: number
+    costPrice: number
+    sellingPrice: number
+    reorderPoint: number
+    unit: string
+    images?: Array<{
         id: string
         url: string
-        is_primary: boolean
+        isPrimary: boolean
     }>
 }
 
 export function ItemsTable({ items }: { items: Item[] }) {
-    const getStockStatus = (available: number, total: number) => {
-        const percentage = total > 0 ? (available / total) * 100 : 0
-        if (percentage === 0) return { label: 'Out of Stock', color: 'text-red-400' }
-        if (percentage < 20) return { label: 'Low Stock', color: 'text-amber-400' }
-        return { label: 'In Stock', color: 'text-emerald-400' }
+    const getStockStatus = (available: number, reorderPoint: number) => {
+        if (available === 0) return { label: 'Out of stock', color: 'text-red-400' }
+        if (available <= reorderPoint || available <= 3) return { label: 'Low stock', color: 'text-amber-300' }
+        return { label: 'Healthy', color: 'text-emerald-400' }
     }
 
     if (items.length === 0) {
         return (
-            <div className="border border-border p-12 text-center">
-                <p className="text-muted-foreground">No items yet. Add your first item to get started.</p>
+            <div className="rounded-[2rem] border border-dashed border-border bg-card/60 p-12 text-center">
+                <p className="text-lg">No items yet.</p>
+                <p className="mt-2 text-sm text-muted-foreground">
+                    Add your first SKU, upload a few images, and start tracking stock safely.
+                </p>
             </div>
         )
     }
 
     return (
-        <div className="border border-border divide-y divide-border">
-            {/* Header - Hidden on mobile */}
-            <div className="hidden md:grid grid-cols-12 gap-4 px-4 md:px-6 py-4 text-xs text-muted-foreground uppercase tracking-wider">
+        <div className="overflow-hidden rounded-[2rem] border border-border bg-card">
+            <div className="hidden grid-cols-12 gap-4 border-b border-border px-6 py-4 text-xs uppercase tracking-[0.2em] text-muted-foreground md:grid">
                 <div className="col-span-5">Item</div>
                 <div className="col-span-2">Category</div>
-                <div className="col-span-2 text-right">Stock</div>
+                <div className="col-span-2 text-right">Available</div>
                 <div className="col-span-2 text-right">Price</div>
-                <div className="col-span-1"></div>
+                <div className="col-span-1" />
             </div>
 
-            {/* Items */}
             {items.map((item) => {
-                const primaryImage = item.item_images?.find(img => img.is_primary) || item.item_images?.[0]
-                const status = getStockStatus(item.available_quantity, item.total_quantity)
+                const primaryImage = item.images?.find((image) => image.isPrimary) ?? item.images?.[0]
+                const status = getStockStatus(item.availableQuantity, item.reorderPoint)
 
                 return (
                     <Link
                         key={item.id}
                         href={`/inventory/${item.id}`}
-                        className="group grid grid-cols-1 md:grid-cols-12 gap-2 md:gap-4 px-4 md:px-6 py-4 md:py-6 hover:bg-accent/50 transition-colors"
+                        className="group grid grid-cols-1 gap-3 border-b border-border/80 px-4 py-5 transition-colors hover:bg-accent/40 md:grid-cols-12 md:gap-4 md:px-6"
                     >
-                        {/* Item Info */}
-                        <div className="md:col-span-5 flex items-center gap-3 md:gap-4">
-                            <div className="w-12 h-12 md:w-14 md:h-14 bg-accent overflow-hidden flex-shrink-0">
+                        <div className="flex items-center gap-4 md:col-span-5">
+                            <div className="relative h-14 w-14 overflow-hidden rounded-2xl bg-accent">
                                 {primaryImage ? (
-                                    <Image
-                                        src={primaryImage.url}
-                                        alt={item.name}
-                                        width={56}
-                                        height={56}
-                                        className="w-full h-full object-cover"
-                                    />
+                                    <Image src={primaryImage.url} alt={item.name} fill sizes="56px" className="object-cover" />
                                 ) : (
-                                    <div className="w-full h-full flex items-center justify-center text-xs text-muted-foreground">
-                                        —
+                                    <div className="flex h-full items-center justify-center text-xs text-muted-foreground">
+                                        No image
                                     </div>
                                 )}
                             </div>
                             <div className="min-w-0">
-                                <p className="font-medium truncate">{item.name}</p>
-                                <p className="text-xs text-muted-foreground md:hidden capitalize">{item.category}</p>
+                                <p className="truncate font-medium">{item.name}</p>
+                                <p className="mt-1 text-xs text-muted-foreground">
+                                    {item.unit} • reorder at {item.reorderPoint}
+                                </p>
                             </div>
                         </div>
 
-                        {/* Category - Desktop only */}
-                        <div className="hidden md:flex md:col-span-2 items-center">
-                            <span className="text-sm text-muted-foreground capitalize">{item.category}</span>
+                        <div className="hidden items-center md:flex md:col-span-2">
+                            <span className="rounded-full bg-accent px-3 py-1 text-xs capitalize text-muted-foreground">
+                                {item.category}
+                            </span>
                         </div>
 
-                        {/* Mobile: Stock + Price in a row */}
-                        <div className="md:hidden flex items-center justify-between text-sm">
-                            <div>
-                                <span>{item.available_quantity}</span>
-                                <span className="text-muted-foreground"> / {item.total_quantity}</span>
-                                <span className={cn("ml-2 text-xs", status.color)}>{status.label}</span>
-                            </div>
-                            <span>₹{item.selling_price.toLocaleString()}</span>
+                        <div className="flex flex-wrap items-center justify-between gap-2 text-sm md:hidden">
+                            <span className="capitalize text-muted-foreground">{item.category}</span>
+                            <span className={cn('text-xs uppercase tracking-wide', status.color)}>{status.label}</span>
                         </div>
 
-                        {/* Stock - Desktop */}
-                        <div className="hidden md:flex md:col-span-2 items-center justify-end">
+                        <div className="hidden items-center justify-end md:col-span-2 md:flex">
                             <div className="text-right">
                                 <p className="text-sm">
-                                    {item.available_quantity} <span className="text-muted-foreground">/ {item.total_quantity}</span>
+                                    {item.availableQuantity} <span className="text-muted-foreground">/ {item.totalQuantity}</span>
                                 </p>
-                                <p className={cn("text-xs mt-0.5", status.color)}>{status.label}</p>
+                                <p className={cn('mt-0.5 text-xs uppercase tracking-wide', status.color)}>{status.label}</p>
                             </div>
                         </div>
 
-                        {/* Price - Desktop */}
-                        <div className="hidden md:flex md:col-span-2 items-center justify-end">
-                            <div className="text-right">
-                                <p className="text-sm">₹{item.selling_price.toLocaleString()}</p>
-                                <p className="text-xs text-muted-foreground mt-0.5">₹{item.cost_price.toLocaleString()} cost</p>
+                        <div className="flex items-center justify-between text-sm md:col-span-2 md:justify-end">
+                            <div className="min-w-0 text-left md:text-right">
+                                <p>{formatCurrency(item.sellingPrice)}</p>
+                                <p className="mt-0.5 text-xs text-muted-foreground">{formatCurrency(item.costPrice)} cost</p>
                             </div>
                         </div>
 
-                        {/* Arrow - Desktop */}
-                        <div className="hidden md:flex md:col-span-1 items-center justify-end">
-                            <ArrowRight className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <div className="hidden items-center justify-end md:col-span-1 md:flex">
+                            <ArrowRight className="h-4 w-4 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
                         </div>
                     </Link>
                 )

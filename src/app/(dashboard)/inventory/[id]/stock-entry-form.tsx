@@ -2,13 +2,13 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Plus } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
+import { addStockEntryAction } from '@/lib/actions/inventory'
 
 interface StockEntryFormProps {
     itemId: string
@@ -20,55 +20,43 @@ export function StockEntryForm({ itemId, currentCost }: StockEntryFormProps) {
     const [loading, setLoading] = useState(false)
     const [quantity, setQuantity] = useState('')
     const [cost, setCost] = useState(currentCost.toString())
+    const [supplierName, setSupplierName] = useState('')
+    const [notes, setNotes] = useState('')
     const router = useRouter()
     const { toast } = useToast()
-    const supabase = createClient()
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         setLoading(true)
 
         try {
-            // Get current user's vendor_id
-            const { data: { user } } = await supabase.auth.getUser()
-            if (!user) throw new Error('Not authenticated')
+            const result = await addStockEntryAction({
+                itemId,
+                quantity: Number(quantity),
+                costPerUnit: Number(cost),
+                supplierName,
+                notes,
+            })
 
-            const { data } = await supabase
-                .from('users')
-                .select('vendor_id')
-                .eq('id', user.id)
-                .single()
-
-            const userData = data as { vendor_id: string } | null
-
-            if (!userData) throw new Error('User data not found')
-
-            const { error } = await supabase
-                .from('stock_entries')
-                .insert({
-                    vendor_id: userData.vendor_id,
-                    item_id: itemId,
-                    quantity_added: parseInt(quantity),
-                    cost_per_unit: parseFloat(cost),
-                    created_by: user.id
-                })
-
-            if (error) throw error
+            if (!result.ok) {
+                throw new Error(result.message)
+            }
 
             toast({
                 title: 'Success',
-                description: 'Stock added successfully',
+                description: result.message,
             })
 
             setOpen(false)
             setQuantity('')
-            router.refresh() // Refresh server component to show new stats
-
-        } catch (error: any) {
+            setSupplierName('')
+            setNotes('')
+            router.refresh()
+        } catch (error: unknown) {
             toast({
                 variant: 'destructive',
                 title: 'Error',
-                description: error.message,
+                description: error instanceof Error ? error.message : 'Unable to add stock.',
             })
         } finally {
             setLoading(false)
@@ -79,8 +67,8 @@ export function StockEntryForm({ itemId, currentCost }: StockEntryFormProps) {
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
                 <Button size="sm">
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add Stock
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add stock
                 </Button>
             </DialogTrigger>
             <DialogContent>
@@ -90,7 +78,7 @@ export function StockEntryForm({ itemId, currentCost }: StockEntryFormProps) {
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div className="space-y-2">
-                        <Label htmlFor="quantity">Quantity Added</Label>
+                        <Label htmlFor="quantity">Quantity added</Label>
                         <Input
                             id="quantity"
                             type="number"
@@ -101,7 +89,7 @@ export function StockEntryForm({ itemId, currentCost }: StockEntryFormProps) {
                         />
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor="cost">Cost Per Unit</Label>
+                        <Label htmlFor="cost">Cost per unit</Label>
                         <Input
                             id="cost"
                             type="number"
@@ -112,9 +100,27 @@ export function StockEntryForm({ itemId, currentCost }: StockEntryFormProps) {
                             required
                         />
                     </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="supplierName">Supplier name</Label>
+                        <Input
+                            id="supplierName"
+                            value={supplierName}
+                            onChange={(e) => setSupplierName(e.target.value)}
+                            placeholder="Optional supplier"
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="notes">Notes</Label>
+                        <Input
+                            id="notes"
+                            value={notes}
+                            onChange={(e) => setNotes(e.target.value)}
+                            placeholder="Batch notes, invoice ref, etc."
+                        />
+                    </div>
                     <DialogFooter>
                         <Button type="submit" disabled={loading}>
-                            {loading ? 'Adding...' : 'Add Stock'}
+                            {loading ? 'Adding...' : 'Add stock'}
                         </Button>
                     </DialogFooter>
                 </form>

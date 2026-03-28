@@ -1,12 +1,21 @@
 'use client'
 
-import { createContext, useContext, useEffect, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
-import { User, Session } from '@supabase/supabase-js'
+import { createContext, useContext } from 'react'
+import { SessionProvider, signIn as nextAuthSignIn, signOut as nextAuthSignOut, useSession } from 'next-auth/react'
+import type { Session } from 'next-auth'
 import { useRouter } from 'next/navigation'
+import { registerUserAction } from '@/lib/actions/auth'
+
+type AuthUser = {
+    id: string
+    vendorId: string
+    role: 'owner' | 'staff' | 'viewer'
+    name?: string | null
+    email?: string | null
+}
 
 interface AuthContextType {
-    user: User | null
+    user: AuthUser | null
     session: Session | null
     loading: boolean
     signIn: (email: string, password: string) => Promise<void>
@@ -16,80 +25,67 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-    const [user, setUser] = useState<User | null>(null)
-    const [session, setSession] = useState<Session | null>(null)
-    const [loading, setLoading] = useState(true)
-    const supabase = createClient()
+function AuthContextBridge({ children }: { children: React.ReactNode }) {
+    const { data: session, status } = useSession()
     const router = useRouter()
 
-    useEffect(() => {
-        // Get initial session
-        const initSession = async () => {
-            try {
-                const { data: { session } } = await supabase.auth.getSession()
-                setSession(session)
-                setUser(session?.user ?? null)
-            } catch (error) {
-                console.error('Error getting session:', error)
-            } finally {
-                setLoading(false)
-            }
-        }
-
-        initSession()
-
-        // Listen for auth changes
-        const {
-            data: { subscription },
-        } = supabase.auth.onAuthStateChange((_event, session) => {
-            setSession(session)
-            setUser(session?.user ?? null)
-            setLoading(false)
-            if (_event === 'SIGNED_OUT') {
-                router.push('/login')
-            }
-        })
-
-        return () => subscription.unsubscribe()
-    }, [supabase, router])
-
     const signIn = async (email: string, password: string) => {
-        const { error } = await supabase.auth.signInWithPassword({
+        const result = await nextAuthSignIn('credentials', {
             email,
             password,
+            redirect: false,
         })
-        if (error) throw error
+
+        if (result?.error) {
+            throw new Error('Invalid email or password')
+        }
     }
 
     const signUp = async (email: string, password: string, businessName: string, fullName: string) => {
-        // Sign up the user - the database trigger (handle_new_user) will
-        // automatically create the vendor and user records
-        const { error: authError } = await supabase.auth.signUp({
+        const result = await registerUserAction({
             email,
             password,
-            options: {
-                data: {
-                    full_name: fullName,
-                    business_name: businessName,
-                }
-            }
+            businessName,
+            fullName,
         })
-        if (authError) throw authError
-        // Note: The trigger can use raw_user_meta_data to set names.
+
+        if (!result.ok) {
+            throw new Error(result.message)
+        }
+
+        const signInResult = await nextAuthSignIn('credentials', {
+            email,
+            password,
+            redirect: false,
+        })
+
+        if (signInResult?.error) {
+            throw new Error('Account created, but automatic sign-in failed.')
+        }
     }
 
     const signOut = async () => {
-        const { error } = await supabase.auth.signOut()
-        if (error) throw error
+        await nextAuthSignOut({ redirect: false })
+        router.push('/login')
+        router.refresh()
     }
+
+    const user = session?.user?.id && session.user.vendorId && session.user.role
+        ? {
+            id: session.user.id,
+            vendorId: session.user.vendorId,
+            role: session.user.role,
+            name: session.user.name,
+            email: session.user.email,
+        }
+        : null
 
     return (
         <AuthContext.Provider
             value={{
                 user,
                 session,
-                loading,
+                loading: status === 'loading',
                 signIn,
                 signUp,
                 signOut,
@@ -97,6 +93,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         >
             {children}
         </AuthContext.Provider>
+    )
+}
+
+export function AuthProvider({
+    children,
+    session,
+}: {
+    children: React.ReactNode
+    session: Session | null
+}) {
+    return (
+        <SessionProvider session={session}>
+            <AuthContextBridge>{children}</AuthContextBridge>
+        </SessionProvider>
     )
 }
 

@@ -13,65 +13,65 @@
     --font-display: 'Instrument Serif', Georgia, serif;
     --font-body: 'Satoshi', -apple-system, sans-serif;
 
-    --background: 0 0% 100%;
-    --foreground: 0 0% 8%;
+    --background: 36 33% 98%;
+    --foreground: 24 14% 12%;
 
     --card: 0 0% 100%;
-    --card-foreground: 0 0% 8%;
+    --card-foreground: 24 14% 12%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 8%;
+    --popover-foreground: 24 14% 12%;
 
-    --primary: 0 0% 8%;
-    --primary-foreground: 0 0% 100%;
+    --primary: 24 14% 12%;
+    --primary-foreground: 36 33% 98%;
 
-    --secondary: 30 15% 96%;
-    --secondary-foreground: 0 0% 8%;
+    --secondary: 36 27% 94%;
+    --secondary-foreground: 24 14% 12%;
 
-    --muted: 30 10% 95%;
-    --muted-foreground: 0 0% 45%;
+    --muted: 36 20% 93%;
+    --muted-foreground: 24 8% 40%;
 
-    --accent: 24 10% 90%;
-    --accent-foreground: 0 0% 8%;
+    --accent: 32 48% 88%;
+    --accent-foreground: 24 14% 12%;
 
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 30 10% 90%;
-    --input: 30 10% 90%;
-    --ring: 0 0% 8%;
+    --border: 30 18% 84%;
+    --input: 30 18% 84%;
+    --ring: 24 14% 12%;
 
-    --radius: 0rem;
+    --radius: 1rem;
   }
 
   .dark {
-    --background: 0 0% 4%;
-    --foreground: 0 0% 96%;
+    --background: 240 6% 7%;
+    --foreground: 36 33% 96%;
 
-    --card: 0 0% 6%;
-    --card-foreground: 0 0% 96%;
+    --card: 240 5% 10%;
+    --card-foreground: 36 33% 96%;
 
-    --popover: 0 0% 6%;
-    --popover-foreground: 0 0% 96%;
+    --popover: 240 5% 10%;
+    --popover-foreground: 36 33% 96%;
 
-    --primary: 0 0% 96%;
-    --primary-foreground: 0 0% 4%;
+    --primary: 36 33% 96%;
+    --primary-foreground: 240 6% 7%;
 
-    --secondary: 0 0% 12%;
-    --secondary-foreground: 0 0% 96%;
+    --secondary: 240 4% 14%;
+    --secondary-foreground: 36 33% 96%;
 
-    --muted: 0 0% 12%;
-    --muted-foreground: 0 0% 55%;
+    --muted: 240 4% 14%;
+    --muted-foreground: 30 12% 66%;
 
-    --accent: 0 0% 14%;
-    --accent-foreground: 0 0% 96%;
+    --accent: 28 22% 18%;
+    --accent-foreground: 36 33% 96%;
 
     --destructive: 0 62% 40%;
     --destructive-foreground: 0 0% 96%;
 
-    --border: 0 0% 14%;
-    --input: 0 0% 14%;
-    --ring: 0 0% 80%;
+    --border: 240 4% 18%;
+    --input: 240 4% 18%;
+    --ring: 36 33% 85%;
   }
 }
 
@@ -82,12 +82,53 @@
 
   html {
     scroll-behavior: smooth;
+    overflow-x: hidden;
+    -webkit-text-size-adjust: 100%;
   }
 
   body {
     @apply bg-background text-foreground;
     font-family: var(--font-body);
     letter-spacing: -0.01em;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  img {
+    max-width: 100%;
+    height: auto;
+  }
+
+  input[type="date"]::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    opacity: 1;
+  }
+
+  input[type="date"]::-webkit-datetime-edit,
+  input[type="date"]::-webkit-datetime-edit-fields-wrapper,
+  input[type="date"]::-webkit-datetime-edit-text,
+  input[type="date"]::-webkit-datetime-edit-month-field,
+  input[type="date"]::-webkit-datetime-edit-day-field,
+  input[type="date"]::-webkit-datetime-edit-year-field {
+    color: hsl(var(--foreground));
+  }
+
+  html:not(.dark) input[type="date"] {
+    color-scheme: light;
+  }
+
+  .dark input[type="date"] {
+    color-scheme: dark;
+  }
+
+  .dark input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(1) brightness(1.4) contrast(1.15);
+    opacity: 1;
+  }
+
+  html:not(.dark) input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(0.12);
   }
 
   /* Typography scale */
@@ -105,6 +146,15 @@
   /* Focus styling */
   :focus-visible {
     @apply outline-none ring-1 ring-ring ring-offset-2 ring-offset-background;
+  }
+
+  button,
+  [role="button"],
+  a,
+  input,
+  select,
+  textarea {
+    -webkit-tap-highlight-color: transparent;
   }
 }
 

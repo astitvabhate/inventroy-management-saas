@@ -23,15 +23,16 @@ export default function SignupPage() {
         try {
             await signUp(email, password, businessName, fullName)
             toast({
-                title: "Success",
-                description: "Account created. Please check your email to verify.",
+                title: 'Workspace created',
+                description: 'Your inventory workspace is ready.',
             })
             router.push('/dashboard')
-        } catch (error: any) {
+            router.refresh()
+        } catch (error: unknown) {
             toast({
-                variant: "destructive",
-                title: "Error",
-                description: error.message || "Failed to create account",
+                variant: 'destructive',
+                title: 'Error',
+                description: error instanceof Error ? error.message : 'Failed to create account',
             })
         } finally {
             setIsLoading(false)
@@ -40,22 +41,21 @@ export default function SignupPage() {
 
     return (
         <div>
-            {/* Mobile Logo */}
-            <Link href="/" className="lg:hidden block text-xl tracking-tight mb-8">
-                Dhuni Decor<span className="text-muted-foreground">.</span>
+            <Link href="/" className="mb-8 block text-sm uppercase tracking-[0.3em] text-stone-400 lg:hidden">
+                Inventory Flow
             </Link>
 
             <div className="mb-8">
-                <h2 className="text-2xl tracking-tight mb-2">Create account</h2>
-                <p className="text-sm text-muted-foreground">
-                    Start managing your inventory today
+                <h2 className="text-3xl tracking-tight text-white">Create your workspace</h2>
+                <p className="mt-2 text-sm text-stone-400">
+                    Set up a clean home for stock, customers, allocations, and sales.
                 </p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                    <label htmlFor="fullName" className="block text-xs text-muted-foreground uppercase tracking-wider mb-2">
-                        Full Name
+                    <label htmlFor="fullName" className="mb-2 block text-xs uppercase tracking-[0.25em] text-stone-500">
+                        Full name
                     </label>
                     <input
                         id="fullName"
@@ -63,14 +63,14 @@ export default function SignupPage() {
                         value={fullName}
                         onChange={(e) => setFullName(e.target.value)}
                         required
-                        className="w-full px-4 py-3 bg-transparent border border-border text-sm focus:outline-none focus:border-foreground transition-colors"
-                        placeholder="John Doe"
+                        className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none transition focus:border-amber-100/50"
+                        placeholder="Alex Carter"
                     />
                 </div>
 
                 <div>
-                    <label htmlFor="businessName" className="block text-xs text-muted-foreground uppercase tracking-wider mb-2">
-                        Business Name
+                    <label htmlFor="businessName" className="mb-2 block text-xs uppercase tracking-[0.25em] text-stone-500">
+                        Workspace name
                     </label>
                     <input
                         id="businessName"
@@ -78,13 +78,13 @@ export default function SignupPage() {
                         value={businessName}
                         onChange={(e) => setBusinessName(e.target.value)}
                         required
-                        className="w-full px-4 py-3 bg-transparent border border-border text-sm focus:outline-none focus:border-foreground transition-colors"
-                        placeholder="Your Business"
+                        className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none transition focus:border-amber-100/50"
+                        placeholder="Northline Supply"
                     />
                 </div>
 
                 <div>
-                    <label htmlFor="email" className="block text-xs text-muted-foreground uppercase tracking-wider mb-2">
+                    <label htmlFor="email" className="mb-2 block text-xs uppercase tracking-[0.25em] text-stone-500">
                         Email
                     </label>
                     <input
@@ -93,13 +93,13 @@ export default function SignupPage() {
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         required
-                        className="w-full px-4 py-3 bg-transparent border border-border text-sm focus:outline-none focus:border-foreground transition-colors"
+                        className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none transition focus:border-amber-100/50"
                         placeholder="name@example.com"
                     />
                 </div>
 
                 <div>
-                    <label htmlFor="password" className="block text-xs text-muted-foreground uppercase tracking-wider mb-2">
+                    <label htmlFor="password" className="mb-2 block text-xs uppercase tracking-[0.25em] text-stone-500">
                         Password
                     </label>
                     <input
@@ -108,23 +108,23 @@ export default function SignupPage() {
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         required
-                        minLength={6}
-                        className="w-full px-4 py-3 bg-transparent border border-border text-sm focus:outline-none focus:border-foreground transition-colors"
+                        minLength={8}
+                        className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none transition focus:border-amber-100/50"
                     />
                 </div>
 
                 <button
                     type="submit"
                     disabled={isLoading}
-                    className="w-full bg-foreground text-background py-3 text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+                    className="w-full rounded-2xl bg-white py-3 text-sm font-medium text-black transition hover:opacity-90 disabled:opacity-50"
                 >
-                    {isLoading ? 'Creating account...' : 'Create account'}
+                    {isLoading ? 'Creating workspace...' : 'Create workspace'}
                 </button>
             </form>
 
-            <p className="mt-8 text-sm text-center text-muted-foreground">
+            <p className="mt-8 text-center text-sm text-stone-400">
                 Already have an account?{' '}
-                <Link href="/login" className="text-foreground hover:underline">
+                <Link href="/login" className="text-white hover:underline">
                     Sign in
                 </Link>
             </p>

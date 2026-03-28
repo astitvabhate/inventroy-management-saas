@@ -1,36 +1,38 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Inventory Flow
 
-## Getting Started
+Inventory Flow is a Next.js 16 inventory SaaS built for production-friendly stock operations. The app now uses:
 
-First, run the development server:
+- `Auth.js` for session-based authentication
+- `MongoDB` for application data and auth persistence
+- `Cloudinary` for item image uploads
+- `zod` for env and mutation validation
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## Setup
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+1. Copy `.env.example` to `.env.local`.
+2. Fill in the MongoDB, Auth.js, and Cloudinary values.
+3. Optionally add `RESEND_API_KEY` and `RESEND_FROM_EMAIL` for password reset emails.
+4. Install dependencies with `npm install`.
+5. Start the app with `npm run dev`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Scripts
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- `npm run dev` starts the local app
+- `npm run lint` runs ESLint
+- `npm run typecheck` runs TypeScript without emitting files
+- `npm run build` creates a production build
 
-## Learn More
+## Product Areas
 
-To learn more about Next.js, take a look at the following resources:
+- Landing page and auth workspace flow
+- Dashboard with stock, allocation, and revenue signals
+- Inventory catalog and item detail workspace
+- Customer directory
+- Allocation tracking
+- Sales overview
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Notes
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Password reset emails will log reset links to the server console if Resend is not configured.
+- Item stock integrity is enforced in server-side MongoDB actions instead of Postgres triggers.
+- The legacy Supabase client, middleware, and typed schema have been removed from the app codebase.

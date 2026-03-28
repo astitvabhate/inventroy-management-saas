@@ -1,157 +1,126 @@
-import { createClient } from '@/lib/supabase/server'
-import { Separator } from '@/components/ui/separator'
 import Link from 'next/link'
-import { StockEntryForm } from "@/app/(dashboard)/inventory/[id]/stock-entry-form"
-import { AllocationForm } from "@/app/(dashboard)/inventory/[id]/allocation-form"
-import { ImageGallery } from "@/app/(dashboard)/inventory/[id]/image-gallery"
-import { AllocationList } from "@/app/(dashboard)/inventory/[id]/allocation-list"
-import { ArrowLeft, Edit } from 'lucide-react'
+import { Separator } from '@/components/ui/separator'
+import { requireSessionUser } from '@/lib/auth/session'
+import { getItemDetails } from '@/lib/data/inventory'
+import { formatCurrency, formatDate } from '@/lib/format'
+import { AllocationForm } from '@/app/(dashboard)/inventory/[id]/allocation-form'
+import { AllocationList } from '@/app/(dashboard)/inventory/[id]/allocation-list'
+import { ImageGallery } from '@/app/(dashboard)/inventory/[id]/image-gallery'
+import { StockEntryForm } from '@/app/(dashboard)/inventory/[id]/stock-entry-form'
+import { BackButton } from '@/components/back-button'
 
 export default async function ItemDetailsPage({
-    params
+    params,
 }: {
     params: Promise<{ id: string }>
 }) {
     const { id } = await params
-    const supabase = await createClient()
+    const user = await requireSessionUser()
+    const details = await getItemDetails(user, id)
 
-    const { data: item } = await supabase
-        .from('items')
-        .select(`
-            *,
-            item_images (*),
-            stock_entries (*),
-            usage (
-                *,
-                customers (name)
-            )
-        `)
-        .eq('id', id)
-        .single()
-
-    if (!item) {
+    if (!details) {
         return (
-            <div className="px-4 md:px-8 py-12 text-center">
-                <p className="text-muted-foreground">Item not found</p>
-                <Link href="/inventory" className="text-sm underline mt-4 inline-block">
+            <div className="px-4 py-12 text-center md:px-8">
+                <p className="text-muted-foreground">Item not found.</p>
+                <Link href="/inventory" className="mt-4 inline-block text-sm underline">
                     Back to inventory
                 </Link>
             </div>
         )
     }
 
+    const { item, stockEntries, allocations, customers } = details
+
     return (
         <div className="min-h-screen">
-            {/* Header */}
-            <div className="px-4 md:px-8 py-6 md:py-12 border-b border-border">
+            <div className="border-b border-border px-4 py-6 md:px-8 md:py-10">
                 <div className="flex flex-col gap-6">
-                    {/* Back Link */}
-                    <Link
-                        href="/inventory"
-                        className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors w-fit"
-                    >
-                        <ArrowLeft className="w-4 h-4" />
-                        Back to inventory
-                    </Link>
+                    <BackButton fallbackHref="/inventory" label="Back to inventory" />
 
-                    {/* Title and Actions */}
-                    <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+                    <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
                         <div>
-                            <p className="text-xs text-muted-foreground uppercase tracking-wider mb-2">
+                            <p className="mb-2 text-xs uppercase tracking-[0.2em] text-muted-foreground">
                                 {item.category}
                             </p>
-                            <h1 className="text-3xl md:text-5xl tracking-tight">{item.name}</h1>
+                            <h1 className="text-3xl tracking-tight md:text-5xl">{item.name}</h1>
+                            <p className="mt-3 text-sm text-muted-foreground">
+                                {item.unit} • reorder at {item.reorderPoint} • SKU {item.sku || 'not set'}
+                            </p>
                         </div>
 
-                        <div className="flex items-center gap-3">
-                            <AllocationForm
-                                itemId={item.id}
-                                itemName={item.name}
-                                availableQuantity={item.available_quantity}
-                            />
-                            <Link
-                                href={`/inventory/${id}/edit`}
-                                className="inline-flex items-center gap-2 px-4 py-2 border border-border text-sm hover:bg-accent transition-colors"
-                            >
-                                <Edit className="w-4 h-4" />
-                                Edit
-                            </Link>
-                        </div>
+                        <AllocationForm
+                            itemId={item.id}
+                            itemName={item.name}
+                            availableQuantity={item.availableQuantity}
+                            customers={customers}
+                        />
                     </div>
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-0">
-                {/* Left: Media & Stats */}
-                <div className="lg:col-span-5 p-4 md:p-8 lg:border-r border-border">
-                    <div className="lg:sticky lg:top-24 space-y-8">
-                        {/* Image Gallery */}
-                        <ImageGallery images={item.item_images || []} itemName={item.name} />
+            <div className="grid grid-cols-1 lg:grid-cols-12">
+                <div className="p-4 md:p-8 lg:col-span-5 lg:border-r lg:border-border">
+                    <div className="space-y-8 lg:sticky lg:top-24">
+                        <ImageGallery images={item.images || []} itemName={item.name} />
 
-                        {/* Stats */}
-                        <div className="grid grid-cols-2 gap-6">
-                            <div className="p-4 border border-border">
-                                <p className="text-xs text-muted-foreground uppercase tracking-wider mb-2">Cost</p>
-                                <p className="text-2xl tracking-tight">₹{item.cost_price.toLocaleString()}</p>
+                        <div className="grid gap-4 sm:grid-cols-2">
+                            <div className="rounded-[1.5rem] border border-border bg-card p-4">
+                                <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Cost</p>
+                                <p className="mt-2 text-2xl tracking-tight">{formatCurrency(item.costPrice)}</p>
                             </div>
-                            <div className="p-4 border border-border">
-                                <p className="text-xs text-muted-foreground uppercase tracking-wider mb-2">Price</p>
-                                <p className="text-2xl tracking-tight">₹{item.selling_price.toLocaleString()}</p>
+                            <div className="rounded-[1.5rem] border border-border bg-card p-4">
+                                <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Price</p>
+                                <p className="mt-2 text-2xl tracking-tight">{formatCurrency(item.sellingPrice)}</p>
                             </div>
-                            <div className="p-4 border border-border">
-                                <p className="text-xs text-muted-foreground uppercase tracking-wider mb-2">Total Stock</p>
-                                <p className="text-2xl tracking-tight">{item.total_quantity}</p>
+                            <div className="rounded-[1.5rem] border border-border bg-card p-4">
+                                <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Total stock</p>
+                                <p className="mt-2 text-2xl tracking-tight">{item.totalQuantity}</p>
                             </div>
-                            <div className="p-4 border border-border">
-                                <p className="text-xs text-muted-foreground uppercase tracking-wider mb-2">Available</p>
-                                <p className="text-2xl tracking-tight">{item.available_quantity}</p>
+                            <div className="rounded-[1.5rem] border border-border bg-card p-4">
+                                <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Available</p>
+                                <p className="mt-2 text-2xl tracking-tight">{item.availableQuantity}</p>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                {/* Right: Details & History */}
-                <div className="lg:col-span-7 p-4 md:p-8 space-y-12">
-                    {/* Description */}
+                <div className="space-y-12 p-4 md:p-8 lg:col-span-7">
                     {item.description && (
                         <section>
-                            <h2 className="text-xs text-muted-foreground uppercase tracking-wider mb-4">Description</h2>
-                            <p className="text-lg text-muted-foreground leading-relaxed">
-                                {item.description}
-                            </p>
+                            <h2 className="mb-4 text-xs uppercase tracking-[0.2em] text-muted-foreground">Description</h2>
+                            <p className="text-lg leading-relaxed text-muted-foreground">{item.description}</p>
                         </section>
                     )}
 
                     <Separator />
 
-                    {/* Stock Entries */}
                     <section>
-                        <div className="flex justify-between items-center mb-6">
-                            <h2 className="text-xs text-muted-foreground uppercase tracking-wider">Stock History</h2>
-                            <StockEntryForm itemId={item.id} currentCost={item.cost_price} />
+                        <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                            <h2 className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Stock history</h2>
+                            <StockEntryForm itemId={item.id} currentCost={item.costPrice} />
                         </div>
 
-                        {item.stock_entries && item.stock_entries.length > 0 ? (
+                        {stockEntries.length > 0 ? (
                             <div className="space-y-3">
-                                {item.stock_entries.map((entry: any) => (
-                                    <div key={entry.id} className="flex justify-between items-center p-4 border border-border">
+                                {stockEntries.map((entry) => (
+                                    <div key={entry.id} className="flex flex-col justify-between gap-3 rounded-[1.5rem] border border-border bg-card p-4 sm:flex-row sm:items-center">
                                         <div>
-                                            <p className="text-sm font-medium">+{entry.quantity_added} units</p>
+                                            <p className="text-sm font-medium">+{entry.quantityAdded} units</p>
                                             <p className="text-xs text-muted-foreground">
-                                                {new Date(entry.created_at).toLocaleDateString()}
+                                                {formatDate(entry.date)}
                                             </p>
                                         </div>
-                                        <div className="text-right">
-                                            <p className="text-sm">₹{entry.total_cost.toLocaleString()}</p>
+                                        <div className="text-left sm:text-right">
+                                            <p className="text-sm">{formatCurrency(entry.totalCost)}</p>
                                             <p className="text-xs text-muted-foreground">
-                                                ₹{entry.cost_per_unit}/unit
+                                                {formatCurrency(entry.costPerUnit)} / unit
                                             </p>
                                         </div>
                                     </div>
                                 ))}
                             </div>
                         ) : (
-                            <div className="py-8 border border-dashed border-border text-center text-sm text-muted-foreground">
+                            <div className="rounded-[1.5rem] border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
                                 No stock entries yet
                             </div>
                         )}
@@ -159,10 +128,9 @@ export default async function ItemDetailsPage({
 
                     <Separator />
 
-                    {/* Allocations */}
                     <section className="pb-12">
-                        <h2 className="text-xs text-muted-foreground uppercase tracking-wider mb-6">Allocations</h2>
-                        <AllocationList allocations={item.usage || []} />
+                        <h2 className="mb-6 text-xs uppercase tracking-[0.2em] text-muted-foreground">Allocations</h2>
+                        <AllocationList allocations={allocations} />
                     </section>
                 </div>
             </div>

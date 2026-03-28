@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { useAuth } from '@/components/providers/auth-provider'
 import { useToast } from '@/hooks/use-toast'
@@ -12,6 +12,7 @@ export default function LoginPage() {
     const [isLoading, setIsLoading] = useState(false)
     const { signIn } = useAuth()
     const router = useRouter()
+    const searchParams = useSearchParams()
     const { toast } = useToast()
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -20,12 +21,13 @@ export default function LoginPage() {
 
         try {
             await signIn(email, password)
-            router.push('/dashboard')
-        } catch (error: any) {
+            router.push(searchParams.get('next') || '/dashboard')
+            router.refresh()
+        } catch (error: unknown) {
             toast({
-                variant: "destructive",
-                title: "Error",
-                description: error.message || "Invalid credentials",
+                variant: 'destructive',
+                title: 'Error',
+                description: error instanceof Error ? error.message : 'Invalid credentials',
             })
         } finally {
             setIsLoading(false)
@@ -34,21 +36,20 @@ export default function LoginPage() {
 
     return (
         <div>
-            {/* Mobile Logo */}
-            <Link href="/" className="lg:hidden block text-xl tracking-tight mb-8">
-                Dhuni Decor<span className="text-muted-foreground">.</span>
+            <Link href="/" className="mb-8 block text-sm uppercase tracking-[0.3em] text-stone-400 lg:hidden">
+                Inventory Flow
             </Link>
 
             <div className="mb-8">
-                <h2 className="text-2xl tracking-tight mb-2">Welcome back</h2>
-                <p className="text-sm text-muted-foreground">
-                    Sign in to your account to continue
+                <h2 className="text-3xl tracking-tight text-white">Welcome back</h2>
+                <p className="mt-2 text-sm text-stone-400">
+                    Sign in to manage stock, returns, and daily operations.
                 </p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                    <label htmlFor="email" className="block text-xs text-muted-foreground uppercase tracking-wider mb-2">
+                    <label htmlFor="email" className="mb-2 block text-xs uppercase tracking-[0.25em] text-stone-500">
                         Email
                     </label>
                     <input
@@ -57,17 +58,17 @@ export default function LoginPage() {
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         required
-                        className="w-full px-4 py-3 bg-transparent border border-border text-sm focus:outline-none focus:border-foreground transition-colors"
+                        className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none transition focus:border-amber-100/50"
                         placeholder="name@example.com"
                     />
                 </div>
 
                 <div>
-                    <div className="flex items-center justify-between mb-2">
-                        <label htmlFor="password" className="block text-xs text-muted-foreground uppercase tracking-wider">
+                    <div className="mb-2 flex items-center justify-between">
+                        <label htmlFor="password" className="block text-xs uppercase tracking-[0.25em] text-stone-500">
                             Password
                         </label>
-                        <Link href="/forgot-password" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
+                        <Link href="/forgot-password" className="text-xs text-stone-400 transition hover:text-white">
                             Forgot password?
                         </Link>
                     </div>
@@ -77,23 +78,23 @@ export default function LoginPage() {
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         required
-                        className="w-full px-4 py-3 bg-transparent border border-border text-sm focus:outline-none focus:border-foreground transition-colors"
+                        className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none transition focus:border-amber-100/50"
                     />
                 </div>
 
                 <button
                     type="submit"
                     disabled={isLoading}
-                    className="w-full bg-foreground text-background py-3 text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+                    className="w-full rounded-2xl bg-white py-3 text-sm font-medium text-black transition hover:opacity-90 disabled:opacity-50"
                 >
                     {isLoading ? 'Signing in...' : 'Sign in'}
                 </button>
             </form>
 
-            <p className="mt-8 text-sm text-center text-muted-foreground">
+            <p className="mt-8 text-center text-sm text-stone-400">
                 Don&apos;t have an account?{' '}
-                <Link href="/signup" className="text-foreground hover:underline">
-                    Sign up
+                <Link href="/signup" className="text-white hover:underline">
+                    Create one
                 </Link>
             </p>
         </div>
